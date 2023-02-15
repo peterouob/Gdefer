@@ -31,5 +31,5 @@ func (e *Engine) Post(pattern string, handle HandleFunc) {
 
 func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c := newContext(w, r)
-	e.router.handler(c)
+	e.router.handle(c)
 }

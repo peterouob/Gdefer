@@ -10,9 +10,13 @@ func main() {
 	g.Get("/", func(c *gdefer.Context) {
 		c.Html(http.StatusOK, "<h1>Hello Gee</h1>")
 	})
-	g.Get("/hello", func(c *gdefer.Context) {
+	g.Get("/hello/:name", func(c *gdefer.Context) {
 		// expect /hello?name=geektutu
 		c.String(http.StatusOK, "hello %s, you're at %s \n", c.Query("name"), c.Path)
+	})
+
+	g.Get("/assets/*filepath", func(c *gdefer.Context) {
+		c.Json(http.StatusOK, gdefer.H{"filepath": c.Param("filepath")})
 	})
 
 	g.Post("/login", func(c *gdefer.Context) {
