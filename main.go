@@ -7,14 +7,16 @@ import (
 
 func main() {
 	g := gdefer.New()
-	g.Get("/", func(c *gdefer.Context) {
-		c.Html(http.StatusOK, "<h1>Hello Gee</h1>")
-	})
-	g.Get("/hello/:name", func(c *gdefer.Context) {
-		// expect /hello?name=geektutu
-		c.String(http.StatusOK, "hello %s, you're at %s \n", c.Query("name"), c.Path)
-	})
-
+	v1 := g.Group("/v1")
+	{
+		v1.Get("/", func(c *gdefer.Context) {
+			c.Html(http.StatusOK, "<h1>Hello Gee</h1>")
+		})
+		v1.Get("/hello/:name", func(c *gdefer.Context) {
+			// expect /hello?name=geektutu
+			c.String(http.StatusOK, "hello %s, you're at %s \n", c.Query("name"), c.Path)
+		})
+	}
 	g.Get("/assets/*filepath", func(c *gdefer.Context) {
 		c.Json(http.StatusOK, gdefer.H{"filepath": c.Param("filepath")})
 	})
