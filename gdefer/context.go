@@ -3,6 +3,7 @@ package gdefer
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 )
 
@@ -18,7 +19,12 @@ type Context struct {
 	Params map[string]string
 	//response object
 	StatusCode int
+	//middleware
+	handlers []HandleFunc
+	index    int8
 }
+
+const abortIndex int8 = math.MaxInt8 >> 1
 
 func newContext(w http.ResponseWriter, r *http.Request) *Context {
 	return &Context{
@@ -26,7 +32,25 @@ func newContext(w http.ResponseWriter, r *http.Request) *Context {
 		Request: r,
 		Path:    r.URL.Path,
 		Method:  r.Method,
+		index:   -1,
 	}
+}
+
+func (c *Context) Next() {
+	c.index++
+	length := len(c.handlers)
+	for ; c.index < int8(length); c.index++ {
+		c.handlers[c.index](c)
+	}
+}
+
+func (c *Context) Abort() {
+	c.index = abortIndex
+	//fmt.Println(c.index)
+}
+
+func (c *Context) IsAbort() bool {
+	return c.index >= abortIndex
 }
 
 func (c *Context) Param(key string) string {
@@ -83,4 +107,21 @@ func (c *Context) Html(code int, html string) {
 	if _, err := c.Writer.Write([]byte(html)); err != nil {
 		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func (c *Context) ClientIP(r *http.Request) string {
+	xForward := r.Header.Get("X-Forwarded-For")
+
+	//ip := strings.TrimSpace(strings.Split(xForward, ",")[0])
+	//if ip != "" {
+	//	return ip
+	//}
+	//ip = strings.TrimSpace(strings.Split(c.Request.Header.Get("X-Real-Ip"), ",")[0])
+	//if ip != "" {
+	//	return ip
+	//}
+	//if ip, _, err := net.SplitHostPort(strings.TrimSpace(c.Request.RemoteAddr)); err != nil {
+	//	return ip
+	//}
+	return xForward
 }

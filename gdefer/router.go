@@ -25,10 +25,13 @@ func (r *Router) handle(c *Context) {
 		c.Params = params
 		key := c.Method + "-" + n.pattern
 		//讓handlers符合handleFunc->handleFunc又為Context對象，將r.handlers轉為context對象
-		r.handlers[key](c)
+		c.handlers = append(c.handlers, r.handlers[key])
 	} else {
-		c.String(http.StatusNotFound, "404 not fund path[%s]\n", c.Path)
+		c.handlers = append(c.handlers, func(c *Context) {
+			c.String(http.StatusNotFound, "404 not fund path[%s]\n", c.Path)
+		})
 	}
+	c.Next()
 }
 
 func parsePattern(pattern string) []string {

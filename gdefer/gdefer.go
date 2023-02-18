@@ -2,6 +2,7 @@ package gdefer
 
 import (
 	"net/http"
+	"strings"
 )
 
 type HandleFunc func(ctx *Context)
@@ -24,6 +25,10 @@ func New() *Engine {
 	engine.RouterGroup = &RouterGroup{engine: engine}
 	engine.groups = []*RouterGroup{engine.RouterGroup}
 	return engine
+}
+
+func (g *RouterGroup) Use(middleware ...HandleFunc) {
+	g.middleware = append(g.middleware, middleware...)
 }
 
 func (g *RouterGroup) Group(prefix string) *RouterGroup {
@@ -54,6 +59,13 @@ func (e *Engine) Run(addr string) error {
 }
 
 func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var middleware []HandleFunc
+	for _, groups := range e.groups {
+		if strings.HasPrefix(r.URL.Path, groups.prefix) {
+			middleware = append(middleware, groups.middleware...)
+		}
+	}
 	c := newContext(w, r)
+	c.handlers = middleware
 	e.router.handle(c)
 }
