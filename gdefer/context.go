@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"net"
 	"net/http"
+	"strings"
 )
 
 type H map[string]interface{}
@@ -109,19 +111,30 @@ func (c *Context) Html(code int, html string) {
 	}
 }
 
-func (c *Context) ClientIP(r *http.Request) string {
-	xForward := r.Header.Get("X-Forwarded-For")
+func (c *Context) GetIP() (ip string, port string, forward string) {
+	ip, port, _ = net.SplitHostPort(c.Request.RemoteAddr)
+	if ip == "" {
+		fmt.Fprintf(c.Writer, "Error for getting IP address")
+		return
+	}
+	userIP := net.ParseIP(ip)
+	if userIP == nil {
+		fmt.Fprintf(c.Writer, "Error for getting user IP address")
+		return
+	}
+	forWord := c.Request.Header.Get("X-Forwarded-For")
+	fmt.Fprintf(c.Writer, "<p>IP: %s</p>", ip)
+	fmt.Fprintf(c.Writer, "<p>Port: %s</p>", port)
+	fmt.Fprintf(c.Writer, "<p>Forwarded for: %s</p>", forWord)
 
-	//ip := strings.TrimSpace(strings.Split(xForward, ",")[0])
-	//if ip != "" {
-	//	return ip
-	//}
-	//ip = strings.TrimSpace(strings.Split(c.Request.Header.Get("X-Real-Ip"), ",")[0])
-	//if ip != "" {
-	//	return ip
-	//}
-	//if ip, _, err := net.SplitHostPort(strings.TrimSpace(c.Request.RemoteAddr)); err != nil {
-	//	return ip
-	//}
-	return xForward
+	xForward := c.Request.Header.Get("X-Forwarded-For")
+	Cip := strings.TrimSpace(strings.Split(xForward, ",")[0])
+	if ip != "" {
+		return Cip, "", ""
+	}
+	Cip = strings.TrimSpace(strings.Split(c.Request.Header.Get("X-Real-Ip"), ",")[0])
+	if ip != "" {
+		return Cip, "", ""
+	}
+	return "", "", ""
 }
