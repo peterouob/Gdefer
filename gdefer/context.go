@@ -24,6 +24,8 @@ type Context struct {
 	//middleware
 	handlers []HandleFunc
 	index    int8
+
+	engine *Engine
 }
 
 const abortIndex int8 = math.MaxInt8 >> 1
@@ -103,11 +105,13 @@ func (c *Context) Data(code int, data []byte) {
 	}
 }
 
-func (c *Context) Html(code int, html string) {
+func (c *Context) Html(code int, name string, data interface{}) {
 	c.SetHeader("Content-Type", "text/html")
 	c.Status(code)
-	if _, err := c.Writer.Write([]byte(html)); err != nil {
-		http.Error(c.Writer, err.Error(), http.StatusInternalServerError)
+	if err := c.engine.htmlTemplate.ExecuteTemplate(c.Writer, name, data); err != nil {
+		c.Status(http.StatusInternalServerError)
+		fmt.Fprintf(c.Writer, "error load html")
+		return
 	}
 }
 
@@ -137,4 +141,8 @@ func (c *Context) GetIP() (ip string, port string, forward string) {
 		return Cip, "", ""
 	}
 	return "", "", ""
+}
+
+func (c *Context) Fail(statusCode int, msg string) {
+	c.Json(statusCode, msg)
 }
